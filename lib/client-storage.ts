@@ -72,7 +72,11 @@ export function obterPerfilLogado(): PerfilCliente | null {
 
 export function salvarPerfilLogado(perfil: PerfilCliente): PerfilCliente {
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(perfil))
+    try {
+      window.localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(perfil))
+    } catch {
+      // Ignora caso o armazenamento local esteja cheio
+    }
   }
   return perfil
 }
@@ -302,7 +306,16 @@ export function listarDocumentosCliente(): OrcamentoLicita[] {
 
 function gravarListaDocumentos(docs: OrcamentoLicita[]): void {
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(STORAGE_DOCS_KEY, JSON.stringify(docs))
+    try {
+      window.localStorage.setItem(STORAGE_DOCS_KEY, JSON.stringify(docs))
+    } catch {
+      try {
+        // Caso o localStorage atinja o limite de 5 MB, mantém os 10 documentos mais recentes
+        window.localStorage.setItem(STORAGE_DOCS_KEY, JSON.stringify(docs.slice(0, 10)))
+      } catch {
+        // Ignora silenciosamente para jamais travar a UI
+      }
+    }
   }
 }
 
@@ -313,13 +326,21 @@ export function obterDocumentoPorId(id: string): OrcamentoLicita | null {
 
 export function definirDocumentoAtivoId(id: string): void {
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(STORAGE_ACTIVE_DOC_KEY, id)
+    try {
+      window.localStorage.setItem(STORAGE_ACTIVE_DOC_KEY, id)
+    } catch {
+      // Ignora erros de cota
+    }
   }
 }
 
 export function obterDocumentoAtivoId(): string | null {
   if (typeof window === "undefined") return null
-  return window.localStorage.getItem(STORAGE_ACTIVE_DOC_KEY)
+  try {
+    return window.localStorage.getItem(STORAGE_ACTIVE_DOC_KEY)
+  } catch {
+    return null
+  }
 }
 
 export function salvarDocumentoCliente(orcamento: OrcamentoLicita): OrcamentoLicita {

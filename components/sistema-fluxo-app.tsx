@@ -6,6 +6,7 @@ import { BudgetTable } from "@/components/budget-table"
 import { ScheduleTable } from "@/components/schedule-table"
 import { DocumentPreview } from "@/components/document-preview"
 import { ZoomControls } from "@/components/zoom-controls"
+import { PropostaConstrutorModulo } from "@/components/proposta-construtor-modulo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -128,6 +129,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
       criado_em: new Date().toISOString()
     }
   ])
+  const [modoEditor, setModoEditor] = useState<"construtor_a4" | "cpu_analitico">("construtor_a4")
   const [viewMode, setViewMode] = useState<"planilha" | "cronograma" | "preview">("planilha")
   const [zoom, setZoom] = useState(1)
   const [isProcessingAI, setIsProcessingAI] = useState(false)
@@ -528,9 +530,17 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
 
   const handleUpdateOrcamentoNoEditor = (novoOrc: OrcamentoLicita) => {
     setOrcamento(novoOrc)
-    salvarDocumentoCliente(novoOrc)
-    setUltimoSalvoEm(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }))
   }
+
+  // Auto-save com debounce de 600ms para evitar bloqueio síncrono de localStorage a cada tecla
+  useEffect(() => {
+    if (etapa !== "editor") return
+    const timer = window.setTimeout(() => {
+      salvarDocumentoCliente(orcamento)
+      setUltimoSalvoEm(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }))
+    }, 600)
+    return () => window.clearTimeout(timer)
+  }, [orcamento, etapa])
 
   const handleSalvarManualNoEditor = () => {
     salvarDocumentoCliente(orcamento)
@@ -615,15 +625,13 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
   if (etapa === "homepage") {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between relative overflow-x-hidden">
-        <div className="pointer-events-none absolute -top-48 left-1/2 -translate-x-1/2 w-[750px] h-[380px] rounded-full bg-emerald-600/15 blur-3xl" />
-
         {/* NAVBAR DA HOMEPAGE */}
         <header className="w-full border-b border-slate-800/80 bg-slate-950/90 backdrop-blur sticky top-0 z-30">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-md shadow-emerald-500/50" />
+              <div className="w-3 h-3 rounded-sm bg-slate-300" />
               <div>
-                <span className="font-black text-sm tracking-wider uppercase text-white">
+                <span className="font-bold text-sm tracking-wider uppercase text-slate-100">
                   LicitaSaaS Engenharia
                 </span>
                 <span className="hidden sm:inline-block text-[11px] text-slate-400 ml-2">
@@ -640,9 +648,9 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                     size="sm"
                     variant="outline"
                     onClick={() => navegarPara("perfil")}
-                    className="h-9 text-xs bg-slate-900 border-emerald-700/60 text-emerald-300 hover:bg-slate-800 gap-1.5"
+                    className="h-9 text-xs bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800 gap-1.5"
                   >
-                    <UserCheck size={14} /> Meu Perfil ({perfil.nome.split(" ")[0]})
+                    <UserCheck size={14} className="text-slate-400" /> Meu Perfil ({perfil.nome.split(" ")[0]})
                   </Button>
                   <Button
                     type="button"
@@ -659,7 +667,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                   type="button"
                   size="sm"
                   onClick={() => navegarPara("login")}
-                  className="h-9 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold gap-1.5 shadow-lg shadow-emerald-950/50"
+                  className="h-9 text-xs bg-slate-200 hover:bg-white text-slate-900 font-semibold gap-1.5"
                 >
                   <LogIn size={14} /> Fazer Login
                 </Button>
@@ -672,31 +680,31 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
         <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-12 sm:py-16 space-y-16 z-10">
           {/* HERO SECTION */}
           <section className="text-center max-w-4xl mx-auto space-y-6">
-            <Badge className="bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs px-3 py-1">
+            <Badge className="bg-slate-900 text-slate-300 border border-slate-800 text-xs font-normal px-3 py-1">
               PLATAFORMA DE ORÇAMENTAÇÃO DE OBRAS • SINAPI & GOINFRA • LEI 14.133/2021 & ACÓRDÃO TCU 2.622/2013
             </Badge>
 
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-100 leading-tight">
               Elaboração de Propostas e Orçamentos de{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+              <span className="text-slate-300">
                 Licitações no Modelo Base
               </span>
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
               Plataforma integrada para engenheiros e construtoras: faça login, acesse seu perfil para{" "}
-              <strong>iniciar um documento do 0</strong> ou{" "}
-              <strong>gerar a partir do PDF de uma licitação</strong>, gerencie todos os seus arquivos com{" "}
-              <strong>opções CRUD</strong> e edite seguindo o <strong>Modelo Base A4</strong>.
+              <strong className="text-slate-200">iniciar um documento do 0</strong> ou{" "}
+              <strong className="text-slate-200">gerar a partir do PDF de uma licitação</strong>, gerencie todos os seus arquivos com{" "}
+              <strong className="text-slate-200">opções CRUD</strong> e edite seguindo o <strong className="text-slate-200">Modelo Base A4</strong>.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
               <Button
                 type="button"
                 onClick={() => navegarPara("login")}
-                className="h-12 px-7 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm gap-2 shadow-xl shadow-emerald-950/60"
+                className="h-11 px-7 bg-slate-200 hover:bg-white text-slate-900 font-semibold text-sm gap-2"
               >
-                <LogIn size={17} /> Fazer Login na Plataforma <ArrowRight size={16} />
+                <LogIn size={16} /> Fazer Login na Plataforma <ArrowRight size={16} />
               </Button>
 
               {perfil && (
@@ -704,9 +712,9 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                   type="button"
                   variant="outline"
                   onClick={() => navegarPara("perfil")}
-                  className="h-12 px-6 bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-200 text-sm font-semibold gap-2"
+                  className="h-11 px-6 bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-200 text-sm font-medium gap-2"
                 >
-                  <FolderOpen size={17} className="text-emerald-400" /> Ir Direto para Meu Perfil
+                  <FolderOpen size={16} className="text-slate-400" /> Ir Direto para Meu Perfil
                 </Button>
               )}
             </div>
@@ -715,7 +723,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
           {/* FLUXO DE FUNCIONAMENTO EM 4 ETAPAS CLICÁVEIS */}
           <section className="space-y-6">
             <div className="text-center space-y-1">
-              <h2 className="text-lg sm:text-xl font-bold text-white">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-100">
                 Como Funciona o Fluxo do Sistema
               </h2>
               <p className="text-xs text-slate-400">
@@ -725,14 +733,14 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Passo 1 */}
-              <div className="bg-slate-900/90 border border-emerald-600/50 rounded-2xl p-5 space-y-3 relative">
+              <div className="bg-slate-900/80 border border-slate-700 rounded-xl p-5 space-y-3 relative">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[11px] font-mono font-semibold text-slate-300 bg-slate-800 border border-slate-700 px-2.5 py-0.5 rounded">
                     ETAPA 1 (ATUAL)
                   </span>
-                  <Layers className="w-5 h-5 text-emerald-400" />
+                  <Layers className="w-4 h-4 text-slate-400" />
                 </div>
-                <h3 className="text-sm font-bold text-white">1. Homepage</h3>
+                <h3 className="text-sm font-bold text-slate-100">1. Homepage</h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Página inicial com apresentação das ferramentas de orçamentação, bases oficiais e acesso rápido ao portal do cliente.
                 </p>
@@ -742,15 +750,15 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
               <button
                 type="button"
                 onClick={() => navegarPara("login")}
-                className="text-left bg-slate-900/90 border border-slate-800 hover:border-emerald-600/60 rounded-2xl p-5 space-y-3 transition-all group block w-full"
+                className="text-left bg-slate-900/50 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 rounded-xl p-5 space-y-3 transition-all group block w-full"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[11px] font-mono font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded">
                     ETAPA 2
                   </span>
-                  <LogIn className="w-5 h-5 text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
+                  <LogIn className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
                 </div>
-                <h3 className="text-sm font-bold text-white group-hover:text-emerald-300">
+                <h3 className="text-sm font-bold text-slate-100">
                   2. Página para Fazer Login
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
@@ -762,15 +770,15 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
               <button
                 type="button"
                 onClick={() => navegarPara("perfil")}
-                className="text-left bg-slate-900/90 border border-slate-800 hover:border-teal-500/60 rounded-2xl p-5 space-y-3 transition-all group block w-full"
+                className="text-left bg-slate-900/50 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 rounded-xl p-5 space-y-3 transition-all group block w-full"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-teal-300 bg-teal-950/60 border border-teal-800/60 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[11px] font-mono font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded">
                     ETAPA 3
                   </span>
-                  <FolderOpen className="w-5 h-5 text-teal-400 group-hover:translate-x-0.5 transition-transform" />
+                  <FolderOpen className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
                 </div>
-                <h3 className="text-sm font-bold text-white group-hover:text-teal-300">
+                <h3 className="text-sm font-bold text-slate-100">
                   3. Perfil (Do 0, PDF & CRUD)
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
@@ -782,15 +790,15 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
               <button
                 type="button"
                 onClick={() => navegarPara("editor")}
-                className="text-left bg-slate-900/90 border border-slate-800 hover:border-emerald-500/60 rounded-2xl p-5 space-y-3 transition-all group block w-full"
+                className="text-left bg-slate-900/50 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 rounded-xl p-5 space-y-3 transition-all group block w-full"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-emerald-300 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[11px] font-mono font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded">
                     ETAPA 4
                   </span>
-                  <FileText className="w-5 h-5 text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
+                  <FileText className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
                 </div>
-                <h3 className="text-sm font-bold text-white group-hover:text-emerald-300">
+                <h3 className="text-sm font-bold text-slate-100">
                   4. Editor no Modelo Base
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
@@ -802,33 +810,33 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
 
           {/* DESTAQUES TÉCNICOS DO SISTEMA */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                <FilePlus2 size={20} />
+            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 space-y-3">
+              <div className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
+                <FilePlus2 size={18} />
               </div>
-              <h3 className="text-base font-bold text-white">Criação do Zero ou via Licitação PDF</h3>
+              <h3 className="text-base font-bold text-slate-100">Criação do Zero ou via Licitação PDF</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Inicie uma proposta e planilha orçamentária do zero com composições oficiais SINAPI e GOINFRA,
                 ou envie o PDF do edital para extração automática de metadados, itens, quantidades e BDI de referência.
               </p>
             </div>
 
-            <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400">
-                <Calculator size={20} />
+            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 space-y-3">
+              <div className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
+                <Calculator size={18} />
               </div>
-              <h3 className="text-base font-bold text-white">Gestão CRUD e Motor Orçamentário</h3>
+              <h3 className="text-base font-bold text-slate-100">Gestão CRUD e Motor Orçamentário</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Todos os arquivos elaborados pelo cliente ficam salvos no Perfil com busca, filtro de status,
                 edição rápida, duplicação e exclusão. No editor, adicione e edite serviços com cálculo reativo de CPU, Curva ABC e BDI TCU.
               </p>
             </div>
 
-            <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                <Sparkles size={20} />
+            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 space-y-3">
+              <div className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
+                <Sparkles size={18} />
               </div>
-              <h3 className="text-base font-bold text-white">Fidelidade ao Modelo Base A4</h3>
+              <h3 className="text-base font-bold text-slate-100">Fidelidade ao Modelo Base A4</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 O documento final é formatado em folha A4 padrão de licitações públicas (Lei 14.133/2021),
                 com planilha sintética, valor por extenso, metodologia técnica, demonstrativo de BDI TCU, cronograma e assinaturas.
@@ -841,17 +849,17 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
         <footer className="border-t border-slate-800/80 bg-slate-950 py-6 px-6 z-10">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
             <div className="flex items-center gap-2">
-              <ShieldCheck size={15} className="text-emerald-400" />
+              <ShieldCheck size={15} className="text-slate-400" />
               <span>LICITASAAS • PLATAFORMA DE ORÇAMENTAÇÃO E PROPOSTAS DE LICITAÇÕES DE OBRAS</span>
             </div>
             <div className="flex items-center gap-4">
-              <button type="button" onClick={() => navegarPara("login")} className="hover:text-emerald-400 transition-colors">
+              <button type="button" onClick={() => navegarPara("login")} className="hover:text-slate-300 transition-colors">
                 Login
               </button>
-              <button type="button" onClick={() => navegarPara("perfil")} className="hover:text-emerald-400 transition-colors">
+              <button type="button" onClick={() => navegarPara("perfil")} className="hover:text-slate-300 transition-colors">
                 Perfil do Cliente
               </button>
-              <button type="button" onClick={() => navegarPara("editor")} className="hover:text-emerald-400 transition-colors">
+              <button type="button" onClick={() => navegarPara("editor")} className="hover:text-slate-300 transition-colors">
                 Editor Modelo Base
               </button>
             </div>
@@ -867,22 +875,19 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
   if (etapa === "login") {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between relative overflow-hidden">
-        <div className="pointer-events-none absolute -top-40 -left-40 w-96 h-96 rounded-full bg-emerald-600/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-teal-600/15 blur-3xl" />
-
         {/* Topbar */}
         <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between z-10">
           <button
             type="button"
             onClick={() => navegarPara("homepage")}
-            className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-emerald-400 transition-colors"
+            className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-slate-200 transition-colors"
           >
             <ArrowLeft size={15} /> Voltar para a Homepage
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="font-bold text-xs uppercase tracking-wider text-slate-200">
+            <div className="w-2.5 h-2.5 rounded-sm bg-slate-400" />
+            <span className="font-bold text-xs uppercase tracking-wider text-slate-300">
               LicitaSaaS • Etapa 2: Login do Cliente
             </span>
           </div>
@@ -890,38 +895,38 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
 
         {/* Container Principal */}
         <main className="flex-1 flex items-center justify-center px-4 py-6 z-10">
-          <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden backdrop-blur">
+          <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
             {/* Coluna Esquerda */}
-            <div className="lg:col-span-5 bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800">
+            <div className="lg:col-span-5 bg-slate-900/80 p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800">
               <div className="space-y-5">
-                <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px]">
+                <Badge className="bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-normal">
                   LICITASAAS • LEI 14.133/2021 & SINAPI
                 </Badge>
 
-                <h1 className="text-2xl font-bold text-white leading-tight">
+                <h1 className="text-2xl font-bold text-slate-100 leading-tight">
                   Acesse seu Perfil e Gerencie suas Propostas e Licitações
                 </h1>
 
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs text-slate-400 leading-relaxed">
                   Após o login, você terá acesso imediato ao seu painel de perfil para iniciar documentos do zero,
                   gerar orçamentos a partir de editais em PDF com IA e gerenciar todos os arquivos já feitos.
                 </p>
 
-                <ul className="space-y-3 pt-2 text-xs text-slate-200">
+                <ul className="space-y-3 pt-2 text-xs text-slate-300">
                   <li className="flex items-start gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                     <span>
                       <strong>Inicie do Zero ou via PDF:</strong> Crie propostas do zero ou importe editais de licitação em PDF.
                     </span>
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                     <span>
                       <strong>Gestão CRUD Completa:</strong> Crie, visualize, edite, duplique e exclua os documentos do cliente.
                     </span>
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                     <span>
                       <strong>Modelo Base A4:</strong> Edite etapas, serviços, BDI TCU, cronograma e textos no Modelo Base.
                     </span>
@@ -930,7 +935,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
               </div>
 
               <div className="pt-6 mt-6 border-t border-slate-800/80 flex items-center gap-2 text-[11px] text-slate-400">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>Ambiente seguro com salvamento automático de documentos.</span>
               </div>
             </div>
@@ -982,7 +987,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
 
                     <Button
                       type="submit"
-                      className="w-full h-10 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs gap-2 shadow-lg shadow-emerald-950/50"
+                      className="w-full h-10 bg-slate-200 hover:bg-white text-slate-900 font-semibold text-xs gap-2"
                     >
                       <span>Entrar e Acessar Meu Perfil</span>
                       <ArrowRight size={15} />
@@ -1002,9 +1007,9 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                     type="button"
                     variant="outline"
                     onClick={handleLoginDemo}
-                    className="w-full h-10 bg-slate-950 hover:bg-slate-800 border-emerald-800/60 text-emerald-300 text-xs font-medium gap-2"
+                    className="w-full h-10 bg-slate-950 hover:bg-slate-800 border-slate-700 text-slate-200 text-xs font-medium gap-2"
                   >
-                    <Sparkles size={14} className="text-emerald-400" />
+                    <Sparkles size={14} className="text-slate-400" />
                     Entrar com Perfil Demo (Construtora Modelo)
                   </Button>
                 </TabsContent>
@@ -1104,7 +1109,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
 
                     <Button
                       type="submit"
-                      className="w-full h-10 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs gap-2 mt-2"
+                      className="w-full h-10 bg-slate-200 hover:bg-white text-slate-900 font-semibold text-xs gap-2 mt-2"
                     >
                       <span>Criar Perfil e Continuar</span>
                       <ArrowRight size={15} />
@@ -1164,19 +1169,19 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                 onClick={() => navegarPara("homepage")}
                 className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
               >
-                <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
+                <div className="w-2.5 h-2.5 rounded-sm bg-slate-300" />
                 <span className="font-bold text-sm tracking-wider uppercase">
                   LicitaSaaS
                 </span>
               </button>
-              <Badge variant="outline" className="text-[10px] border-emerald-800/70 text-emerald-400 bg-emerald-950/30">
+              <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-300 bg-slate-900 font-normal">
                 Etapa 3 • Perfil do Cliente & CRUD
               </Badge>
             </div>
 
             <div className="flex items-center gap-2.5 flex-wrap">
               <div className="hidden md:flex items-center gap-2.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs">
-                <User size={14} className="text-emerald-400" />
+                <User size={14} className="text-slate-400" />
                 <div>
                   <span className="font-semibold text-slate-200">{perfilAtivo.nome}</span>
                   <span className="text-slate-500 mx-1.5">•</span>
@@ -1191,7 +1196,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                 onClick={abrirModalEditarPerfil}
                 className="h-8 text-xs bg-slate-950 border-slate-700 text-slate-200 hover:bg-slate-800"
               >
-                <Building2 size={13} className="mr-1.5 text-emerald-400" /> Dados da Empresa
+                <Building2 size={13} className="mr-1.5 text-slate-400" /> Dados da Empresa
               </Button>
 
               <Button
@@ -1225,10 +1230,10 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
         {/* CONTEÚDO PRINCIPAL DO PERFIL */}
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
           {/* RESUMO DO PERFIL DO CLIENTE */}
-          <section className="bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/40 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <section className="bg-slate-900/70 border border-slate-800 rounded-xl p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px]">
+                <Badge className="bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-normal">
                   ÁREA DO CLIENTE AUTENTICADA
                 </Badge>
                 <span className="text-xs text-slate-400 font-mono">CNPJ: {perfilAtivo.cnpj}</span>
@@ -1236,30 +1241,30 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                   • RT: {perfilAtivo.responsavel_tecnico} ({perfilAtivo.registro_profissional})
                 </span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-white">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-100">
                 Olá, {perfilAtivo.nome} — O que deseja elaborar hoje?
               </h1>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-3xl">
-                Inicie um novo documento <strong>do zero</strong> seguindo o Modelo Base de licitações,{" "}
-                <strong>importe o PDF de uma licitação</strong> para pré-gerar a planilha e a proposta automaticamente,
-                ou gerencie os <strong>outros arquivos já feitos</strong> abaixo com opções CRUD.
+              <p className="text-xs sm:text-sm text-slate-400 max-w-3xl">
+                Inicie um novo documento <strong className="text-slate-200">do zero</strong> seguindo o Modelo Base de licitações,{" "}
+                <strong className="text-slate-200">importe o PDF de uma licitação</strong> para pré-gerar a planilha e a proposta automaticamente,
+                ou gerencie os <strong className="text-slate-200">outros arquivos já feitos</strong> abaixo com opções CRUD.
               </p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0">
-              <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-center">
+              <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 text-center">
                 <span className="text-[10px] text-slate-400 uppercase block">Meus Arquivos</span>
-                <span className="text-lg font-bold text-white font-mono">{documentos.length}</span>
+                <span className="text-lg font-bold text-slate-100 font-mono">{documentos.length}</span>
               </div>
-              <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-center">
+              <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 text-center">
                 <span className="text-[10px] text-slate-400 uppercase block">Via Licitação PDF</span>
-                <span className="text-lg font-bold text-teal-400 font-mono">
+                <span className="text-lg font-bold text-slate-200 font-mono">
                   {documentos.filter((d) => d.origem === "pdf_licitacao").length}
                 </span>
               </div>
-              <div className="col-span-2 sm:col-span-1 bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-center">
+              <div className="col-span-2 sm:col-span-1 bg-slate-950 border border-slate-800 rounded-lg p-3 text-center">
                 <span className="text-[10px] text-slate-400 uppercase block">Total em Propostas</span>
-                <span className="text-sm font-bold text-emerald-400 font-mono">{fmtBRL(somaCarteira)}</span>
+                <span className="text-sm font-bold text-slate-100 font-mono">{fmtBRL(somaCarteira)}</span>
               </div>
             </div>
           </section>
@@ -1267,19 +1272,19 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
           {/* DUAS OPÇÕES PRINCIPAIS PARA INICIAR DOCUMENTO */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* OPÇÃO 1: INICIAR UM DOCUMENTO DO 0 */}
-            <div className="bg-slate-900 border border-slate-800 hover:border-emerald-600/60 rounded-2xl p-6 shadow-xl flex flex-col justify-between transition-all group">
+            <div className="bg-slate-900/60 border border-slate-800 hover:border-slate-700 rounded-xl p-6 flex flex-col justify-between transition-all group">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                    <FilePlus2 size={24} />
+                  <div className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
+                    <FilePlus2 size={20} />
                   </div>
-                  <Badge variant="outline" className="text-[10px] border-emerald-700/60 text-emerald-300 bg-emerald-950/30">
+                  <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-300 bg-slate-900 font-normal">
                     OPÇÃO 1 • MODELO BASE
                   </Badge>
                 </div>
 
                 <div className="space-y-1.5">
-                  <h2 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
+                  <h2 className="text-lg font-bold text-slate-100">
                     Iniciar um Documento do 0
                   </h2>
                   <p className="text-xs text-slate-400 leading-relaxed">
@@ -1293,7 +1298,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                 <Button
                   type="button"
                   onClick={abrirModalCriarDoZero}
-                  className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs gap-2 shadow-lg shadow-emerald-950/50"
+                  className="flex-1 h-10 bg-slate-200 hover:bg-white text-slate-900 font-semibold text-xs gap-2"
                 >
                   <FilePlus2 size={15} /> Configurar e Iniciar do 0 <ArrowRight size={14} />
                 </Button>
@@ -1309,19 +1314,19 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
             </div>
 
             {/* OPÇÃO 2: INICIAR COM BASE EM UMA LICITAÇÃO VINDA POR PDF */}
-            <div className="bg-slate-900 border border-slate-800 hover:border-teal-500/60 rounded-2xl p-6 shadow-xl flex flex-col justify-between transition-all group">
+            <div className="bg-slate-900/60 border border-slate-800 hover:border-slate-700 rounded-xl p-6 flex flex-col justify-between transition-all group">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400">
-                    <FileUp size={24} />
+                  <div className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
+                    <FileUp size={20} />
                   </div>
-                  <Badge variant="outline" className="text-[10px] border-teal-700/60 text-teal-300 bg-teal-950/30">
+                  <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-300 bg-slate-900 font-normal">
                     OPÇÃO 2 • EXTRAÇÃO DE EDITAL PDF
                   </Badge>
                 </div>
 
                 <div className="space-y-1.5">
-                  <h2 className="text-lg font-bold text-white group-hover:text-teal-300 transition-colors">
+                  <h2 className="text-lg font-bold text-slate-100">
                     Iniciar com Base em uma Licitação vinda por PDF
                   </h2>
                   <p className="text-xs text-slate-400 leading-relaxed">
@@ -1343,7 +1348,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                   type="button"
                   onClick={() => pdfInputPerfilRef.current?.click()}
                   disabled={processandoPdfPerfil}
-                  className="flex-1 h-10 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-semibold text-xs gap-2 shadow-lg shadow-teal-950/50"
+                  className="flex-1 h-10 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 font-semibold text-xs gap-2"
                 >
                   {processandoPdfPerfil ? (
                     <>
@@ -1351,7 +1356,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                     </>
                   ) : (
                     <>
-                      <Sparkles size={15} /> Selecionar PDF da Licitação <ArrowRight size={14} />
+                      <Sparkles size={15} className="text-slate-300" /> Selecionar PDF da Licitação <ArrowRight size={14} />
                     </>
                   )}
                 </Button>
@@ -1360,7 +1365,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                   variant="outline"
                   disabled={processandoPdfPerfil}
                   onClick={handleSimularUploadPDFNoPerfil}
-                  className="h-10 text-xs bg-slate-950 hover:bg-slate-800 border-slate-700 text-teal-300"
+                  className="h-10 text-xs bg-slate-950 hover:bg-slate-800 border-slate-700 text-slate-300"
                   title="Testar geração imediata com um Edital PDF de exemplo"
                 >
                   Testar com PDF Demo
@@ -1373,8 +1378,8 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
           <section className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <FolderOpen className="w-5 h-5 text-emerald-400" />
+                <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+                  <FolderOpen className="w-5 h-5 text-slate-400" />
                   Outros Arquivos Já Feitos pelo Cliente — Opções CRUD ({documentosFiltrados.length})
                 </h2>
                 <p className="text-xs text-slate-400">
@@ -1445,7 +1450,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                     type="button"
                     size="sm"
                     onClick={abrirModalCriarDoZero}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs"
+                    className="bg-slate-200 hover:bg-white text-slate-900 text-xs font-semibold"
                   >
                     <FilePlus2 size={14} className="mr-1.5" /> Iniciar Documento do 0
                   </Button>
@@ -1470,29 +1475,23 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                   return (
                     <div
                       key={doc.id}
-                      className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-5 shadow-lg transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                      className="bg-slate-900/60 border border-slate-800 hover:border-slate-700 rounded-xl p-5 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                     >
                       <div className="space-y-2 flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           {origemAtual === "pdf_licitacao" ? (
-                            <Badge className="bg-teal-950/90 text-teal-300 border border-teal-700/60 text-[10px] gap-1">
+                            <Badge className="bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-normal gap-1">
                               <FileUp size={11} /> Baseado em Licitação (PDF)
                             </Badge>
                           ) : (
-                            <Badge className="bg-emerald-950/90 text-emerald-300 border border-emerald-700/60 text-[10px] gap-1">
+                            <Badge className="bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-normal gap-1">
                               <FilePlus2 size={11} /> Iniciado do 0 (Modelo Base)
                             </Badge>
                           )}
 
                           <Badge
                             variant="outline"
-                            className={`text-[10px] ${
-                              statusAtual === "finalizado"
-                                ? "border-emerald-600/60 text-emerald-400 bg-emerald-950/30"
-                                : statusAtual === "em_revisao"
-                                ? "border-amber-600/60 text-amber-300 bg-amber-950/30"
-                                : "border-slate-700 text-slate-400 bg-slate-950"
-                            }`}
+                            className="text-[10px] font-normal border-slate-700 text-slate-300 bg-slate-900"
                           >
                             {statusAtual === "finalizado" ? (
                               <span className="flex items-center gap-1">
@@ -1514,7 +1513,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                           )}
 
                           {doc.arquivo_origem_pdf && (
-                            <span className="text-[10px] text-teal-400/90 font-mono truncate max-w-xs">
+                            <span className="text-[10px] text-slate-400 font-mono truncate max-w-xs">
                               PDF: {doc.arquivo_origem_pdf}
                             </span>
                           )}
@@ -1522,7 +1521,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
 
                         <h3
                           onClick={() => navegarPara("editor", doc.id)}
-                          className="text-base font-bold text-white hover:text-emerald-400 cursor-pointer transition-colors truncate"
+                          className="text-base font-bold text-slate-100 hover:text-white cursor-pointer transition-colors truncate"
                         >
                           {doc.titulo || doc.edital.objeto || "Documento de Orçamento"}
                         </h3>
@@ -1564,7 +1563,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                       <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between gap-3 shrink-0 border-t lg:border-t-0 pt-3 lg:pt-0 border-slate-800">
                         <div className="lg:text-right">
                           <span className="text-[10px] text-slate-400 uppercase block">Valor Global c/ BDI</span>
-                          <span className="text-lg font-bold font-mono text-emerald-400">
+                          <span className="text-lg font-bold font-mono text-slate-100">
                             {fmtBRL(resumo.valorGlobal)}
                           </span>
                         </div>
@@ -1574,7 +1573,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                             type="button"
                             size="sm"
                             onClick={() => navegarPara("editor", doc.id)}
-                            className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold gap-1.5"
+                            className="h-8 text-xs bg-slate-200 hover:bg-white text-slate-900 font-semibold gap-1.5"
                           >
                             <ExternalLink size={13} /> Abrir / Editar no Modelo Base
                           </Button>
@@ -1625,8 +1624,8 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
         <Dialog open={modalZeroOpen} onOpenChange={setModalZeroOpen}>
           <DialogContent className="bg-slate-900 border-slate-800 text-slate-100 max-w-lg">
             <DialogHeader>
-              <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
-                <FilePlus2 className="w-5 h-5 text-emerald-400" />
+              <DialogTitle className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <FilePlus2 className="w-5 h-5 text-slate-400" />
                 Iniciar Novo Documento do 0 (Modelo Base)
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-400">
@@ -1712,7 +1711,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                 type="button"
                 size="sm"
                 onClick={handleConfirmarCriarDoZero}
-                className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold gap-1.5"
+                className="text-xs bg-slate-200 hover:bg-white text-slate-900 font-semibold gap-1.5"
               >
                 Criar e Abrir no Editor <ArrowRight size={13} />
               </Button>
@@ -1798,7 +1797,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                 type="button"
                 size="sm"
                 onClick={handleSalvarEdicaoRapidaDoc}
-                className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white"
+                className="text-xs bg-slate-200 hover:bg-white text-slate-900 font-semibold"
               >
                 Salvar Alterações
               </Button>
@@ -1946,7 +1945,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                 type="button"
                 size="sm"
                 onClick={handleSalvarPerfil}
-                className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white"
+                className="text-xs bg-slate-200 hover:bg-white text-slate-900 font-semibold"
               >
                 Salvar Dados do Perfil
               </Button>
@@ -1958,8 +1957,37 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
   }
 
   // ----------------------------------------------------------------------------
-  // ETAPA 4: EDITOR DO ARQUIVO PRÉ-GERADO OU INICIADO DO 0 (MODELO BASE)
+  // ETAPA 4: MÓDULO CONSTRUTOR DE PROPOSTAS DE LICITAÇÃO DE ENGENHARIA (SPLIT-SCREEN A4)
   // ----------------------------------------------------------------------------
+  if (modoEditor === "construtor_a4") {
+    return (
+      <PropostaConstrutorModulo
+        orcamentoAtivo={orcamento}
+        listaLicitacoesSaaS={documentos.length > 0 ? documentos : listarDocumentosCliente()}
+        baseReferencia={baseReferencia}
+        perfilCliente={perfilAtivo}
+        onUpdateOrcamentoSaaS={(novoOrc) => {
+          handleUpdateOrcamentoNoEditor(novoOrc)
+          setDocumentos(listarDocumentosCliente())
+        }}
+        onSelecionarLicitacaoSaaS={(id) => {
+          const doc = obterDocumentoPorId(id)
+          if (doc) {
+            setOrcamento(doc)
+            definirDocumentoAtivoId(id)
+          }
+        }}
+        onUploadEditalPDF={handleUploadEditalPDFNoEditor}
+        isProcessingAI={isProcessingAI}
+        onVoltarPerfil={() => {
+          salvarDocumentoCliente(orcamento)
+          navegarPara("perfil")
+        }}
+        onAlternarModoPlanilhaAnalitica={() => setModoEditor("cpu_analitico")}
+      />
+    )
+  }
+
   return (
     <div className="fixed inset-0 flex flex-col-reverse lg:flex-row w-full bg-slate-950 overflow-hidden print:static print:h-auto print:block print:bg-white print:overflow-visible">
       {/* PAINEL LATERAL ESQUERDO: BARRA DE EDIÇÃO */}
@@ -1992,15 +2020,24 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
               <ArrowLeft size={14} /> Voltar ao Perfil
             </Button>
 
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setModoEditor("construtor_a4")}
+              className="h-8 text-xs bg-slate-200 hover:bg-white text-slate-900 font-semibold gap-1.5"
+            >
+              <Sparkles size={13} /> Voltar ao Construtor Split-Screen A4 (6 Passos)
+            </Button>
+
             <div className="h-5 w-px bg-slate-800 hidden sm:block" />
 
             <div className="flex items-center gap-2">
               {orcamento.origem === "pdf_licitacao" ? (
-                <Badge className="bg-teal-950/80 text-teal-300 border border-teal-700/60 text-[10px] gap-1 h-6">
+                <Badge className="bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-normal gap-1 h-6">
                   <FileUp size={11} /> Pré-gerado via PDF
                 </Badge>
               ) : (
-                <Badge className="bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 text-[10px] gap-1 h-6">
+                <Badge className="bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-normal gap-1 h-6">
                   <FilePlus2 size={11} /> Iniciado do 0
                 </Badge>
               )}
@@ -2055,7 +2092,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
           <div className="flex items-center gap-3 text-xs font-mono">
             {ultimoSalvoEm && (
               <span className="hidden xl:flex items-center gap-1 text-[10px] text-slate-400 font-sans">
-                <CheckCircle2 size={12} className="text-emerald-400" /> Salvo às {ultimoSalvoEm}
+                <CheckCircle2 size={12} className="text-slate-400" /> Salvo às {ultimoSalvoEm}
               </span>
             )}
 
@@ -2069,7 +2106,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
               <span className="text-[10px] text-slate-400 block font-sans">
                 Total c/ BDI ({fmtPct(resultado.bdi.bdi_percentual)}):
               </span>
-              <span className="font-bold text-emerald-400 text-sm">
+              <span className="font-bold text-slate-100 text-sm">
                 {fmtBRL(resultado.valor_global)}
               </span>
             </div>
@@ -2078,7 +2115,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
               type="button"
               size="sm"
               onClick={handleSalvarManualNoEditor}
-              className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+              className="h-8 text-xs bg-slate-200 hover:bg-white text-slate-900 font-semibold"
             >
               <Save size={13} className="mr-1.5" /> Salvar
             </Button>
@@ -2120,7 +2157,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                       {orcamento.edital.numero_edital || orcamento.modelo_base?.num_proposta || "-"}
                     </strong>
                     {orcamento.arquivo_origem_pdf && (
-                      <span className="ml-2 text-teal-400">
+                      <span className="ml-2 text-slate-400">
                         • PDF base: {orcamento.arquivo_origem_pdf}
                       </span>
                     )}
@@ -2132,7 +2169,7 @@ export function SistemaFluxoApp({ initialStage = "homepage" }: SistemaFluxoAppPr
                     size="sm"
                     variant="outline"
                     onClick={() => setViewMode("preview")}
-                    className="h-8 text-xs bg-slate-950 border-slate-700 text-emerald-300 hover:bg-slate-800"
+                    className="h-8 text-xs bg-slate-950 border-slate-700 text-slate-200 hover:bg-slate-800"
                   >
                     <FileText size={13} className="mr-1.5" /> Ver no Modelo Base A4
                   </Button>

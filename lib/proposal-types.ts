@@ -6,59 +6,8 @@ export function formatCurrency(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
 
-export function valorExtenso(v: number): string {
-  if (v === 0) return "zero reais"
-  const inteiro = Math.floor(v)
-  const centavos = Math.round(v * 100) % 100
-
-  const unidades = [
-    "", "um", "dois", "três", "quatro", "cinco",
-    "seis", "sete", "oito", "nove", "dez",
-    "onze", "doze", "treze", "quatorze", "quinze",
-    "dezesseis", "dezessete", "dezoito", "dezenove",
-  ]
-  const dezenas = [
-    "", "", "vinte", "trinta", "quarenta", "cinquenta",
-    "sessenta", "setenta", "oitenta", "noventa",
-  ]
-  const centenas = [
-    "", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos",
-    "seiscentos", "setecentos", "oitocentos", "novecentos",
-  ]
-
-  function porExtenso(n: number): string {
-    if (n === 0) return ""
-    if (n === 100) return "cem"
-    if (n < 20) return unidades[n]
-    if (n < 100) {
-      const d = Math.floor(n / 10)
-      const u = n % 10
-      return u === 0 ? dezenas[d] : `${dezenas[d]} e ${unidades[u]}`
-    }
-    if (n < 1000) {
-      const c = Math.floor(n / 100)
-      const resto = n % 100
-      return resto === 0 ? (n === 100 ? "cem" : centenas[c]) : `${centenas[c]} e ${porExtenso(resto)}`
-    }
-    if (n < 1000000) {
-      const milhares = Math.floor(n / 1000)
-      const resto = n % 1000
-      const milStr = milhares === 1 ? "mil" : `${porExtenso(milhares)} mil`
-      return resto === 0 ? milStr : `${milStr} e ${porExtenso(resto)}`
-    }
-    return `${n}`
-  }
-
-  let resultado = ""
-  if (inteiro > 0) {
-    resultado = `${porExtenso(inteiro)} ${inteiro === 1 ? "real" : "reais"}`
-  }
-  if (centavos > 0) {
-    const centStr = `${porExtenso(centavos)} ${centavos === 1 ? "centavo" : "centavos"}`
-    resultado = resultado ? `${resultado} e ${centStr}` : centStr
-  }
-  return resultado
-}
+// Implementação completa (até trilhões) centralizada em ./valor-extenso
+export { valorExtenso } from "./valor-extenso"
 
 export function formatDate(dateStr: string): string {
   if (!dateStr) return "..."

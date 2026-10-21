@@ -351,7 +351,7 @@ export function EditorSidebar({
                       atualizado_em: new Date().toISOString()
                     })
                   }
-                  placeholder="Ex: Proposta Drenagem / Concorrência 012/2026"
+                  placeholder="Ex: Proposta Comercial — Concorrência Eletrônica 012/2026"
                   className="h-7 text-xs bg-slate-950 border-slate-700"
                 />
               </div>
